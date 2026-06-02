@@ -1,12 +1,10 @@
-package konta_tranzakcje_api;
+package budgetapp.api.model;
 
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,9 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name="transactions")
 @NoArgsConstructor
-@AllArgsConstructor
 @Getter
-@Setter
 public class Transaction {
 
     @Id
@@ -26,7 +22,7 @@ public class Transaction {
     @NotNull(message = "Kwota tranzakcji musi byc wieksza od zera")
     @DecimalMin(value = "0.01", message = "Kwota tranzakcji musi byc wieksza od zera")
     @Column(nullable = false,precision=12,scale=2)
-    BigDecimal amount;
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false,length = 10)
@@ -35,7 +31,7 @@ public class Transaction {
     @Column(nullable = false,length = 20)
     private String category;
 
-    @Column(nullable = true,length = 100)
+    @Column(length = 100)
     private String description;
 
     @Column(nullable = false)
@@ -47,7 +43,15 @@ public class Transaction {
 
 
     @PrePersist
-    public void OnCreate() {
+    protected void onCreate() {
         this.transactionDate = LocalDateTime.now();
+    }
+
+    public Transaction(Account account, BigDecimal amount, Type type, String category, String description) {
+        this.account = account;
+        this.amount = amount;
+        this.type = type;
+        this.category = category;
+        this.description = description;
     }
 }

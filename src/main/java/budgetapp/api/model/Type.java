@@ -1,4 +1,4 @@
-package konta_tranzakcje_api;
+package budgetapp.api.model;
 
 public enum Type {
     EXPENSE,
