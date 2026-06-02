@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class KontaTranzakcjeApiApplication {
+public class KontaTransakcjeApiApplication {
 
 	static void main(String[] args) {
-		SpringApplication.run(KontaTranzakcjeApiApplication.class, args);
+		SpringApplication.run(KontaTransakcjeApiApplication.class, args);
 	}
 
 }

@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>io.github.MaciejL777</groupId>
-	<artifactId>konta_tranzakcje_api</artifactId>
+	<artifactId>konta_transakcje_api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
 	<description/>

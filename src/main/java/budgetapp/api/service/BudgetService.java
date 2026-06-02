@@ -44,7 +44,7 @@ public class BudgetService {
     public void deleteAccount(Long id){
         Account account = findAccountById(id);
         if(!account.getTransactions().isEmpty()){
-            throw new IllegalStateException("Nie mozna usunac konta z przypisanymi tranzakcjami");
+            throw new IllegalStateException("Nie mozna usunac konta z przypisanymi transakcjami");
         }
         accountRepository.delete(account);
     }
@@ -83,7 +83,7 @@ public class BudgetService {
     }
     @Transactional
     public void deleteTransaction(Long id){
-        Transaction transaction = transactionRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono tranzakcji o id: " + id));
+        Transaction transaction = transactionRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono transakcji o id: " + id));
         Account account = transaction.getAccount();
         if(transaction.getType()== Type.EXPENSE){
 
@@ -92,7 +92,7 @@ public class BudgetService {
         } else if (transaction.getType()== Type.INCOME){
 
             if(account.getBalance().compareTo(transaction.getAmount()) < 0){
-                throw new IllegalStateException("Nie mozna usunac tej tranzakcji, bo saldo konta jest za niskie");
+                throw new IllegalStateException("Nie mozna usunac tej transakcji, bo saldo konta jest za niskie");
             }
             account.setBalance(account.getBalance().subtract(transaction.getAmount()));
 
