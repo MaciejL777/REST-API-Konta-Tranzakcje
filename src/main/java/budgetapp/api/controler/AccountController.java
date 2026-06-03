@@ -2,13 +2,16 @@ package budgetapp.api.controler;
 
 
 import budgetapp.api.model.Account;
+import budgetapp.api.model.BudgetSummary;
 import budgetapp.api.service.BudgetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -37,5 +40,14 @@ public class AccountController {
     public ResponseEntity<Void> deleteAccount(@PathVariable Long id) {
         budgetService.deleteAccount(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/{accountId}/summary")
+    public ResponseEntity<BudgetSummary> getSummary(
+            @PathVariable Long accountId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+
+        BudgetSummary summary = budgetService.getBudgetSummary(accountId, from, to);
+        return ResponseEntity.ok(summary);
     }
 }

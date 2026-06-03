@@ -2,6 +2,7 @@ package budgetapp.api.service;
 
 
 import budgetapp.api.model.Account;
+import budgetapp.api.model.BudgetSummary;
 import budgetapp.api.model.Transaction;
 import budgetapp.api.model.Type;
 import budgetapp.api.repository.AccountRepository;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -98,5 +101,35 @@ public class BudgetService {
 
         }
         transactionRepository.delete(transaction);
+    }
+    public BudgetSummary getBudgetSummary(Long id,LocalDateTime from, LocalDateTime to) {
+
+        if(!accountRepository.existsById(id)){
+            throw new IllegalArgumentException("Nie znaleziono konta o id: " + id);
+        }
+
+        List<Transaction> accountTransactions = getFilteredTransactions(from, to, null).stream()
+                .filter(t -> t.getAccount() != null && t.getAccount().getId().equals(id))
+                .collect(Collectors.toList());
+
+        BigDecimal totalIncome= accountTransactions.stream()
+                .filter(t->t.getType()== Type.INCOME)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalExpense = accountTransactions.stream()
+                .filter(t -> t.getType() == Type.EXPENSE)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Map<String,BigDecimal> exprenseByCategory = accountTransactions.stream()
+                .filter(t->t.getType()== Type.EXPENSE)
+                .collect(Collectors.groupingBy(
+                        Transaction::getCategory,
+                        Collectors.mapping(
+                                Transaction::getAmount,
+                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add)
+                        )
+                ));
+        return new BudgetSummary(totalIncome,totalExpense,exprenseByCategory);
     }
 }
