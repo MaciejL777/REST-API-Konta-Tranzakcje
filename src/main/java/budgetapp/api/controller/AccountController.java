@@ -1,4 +1,4 @@
-package budgetapp.api.controler;
+package budgetapp.api.controller;
 
 
 import budgetapp.api.model.Account;
