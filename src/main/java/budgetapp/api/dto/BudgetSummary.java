@@ -1,4 +1,4 @@
-package budgetapp.api.model;
+package budgetapp.api.dto;
 
 
 import lombok.AllArgsConstructor;

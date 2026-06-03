@@ -2,7 +2,7 @@ package budgetapp.api.controler;
 
 
 import budgetapp.api.model.Account;
-import budgetapp.api.model.BudgetSummary;
+import budgetapp.api.dto.BudgetSummary;
 import budgetapp.api.service.BudgetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

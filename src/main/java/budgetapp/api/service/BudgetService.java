@@ -1,8 +1,9 @@
 package budgetapp.api.service;
 
 
+import budgetapp.api.exception.ResourceNotFoundException;
 import budgetapp.api.model.Account;
-import budgetapp.api.model.BudgetSummary;
+import budgetapp.api.dto.BudgetSummary;
 import budgetapp.api.model.Transaction;
 import budgetapp.api.model.Type;
 import budgetapp.api.repository.AccountRepository;
@@ -41,7 +42,7 @@ public class BudgetService {
     }
 
     public Account findAccountById(Long id){
-        return accountRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Nie znaleziono konta o id: " + id));
+        return accountRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono konta o podanym id: " + id));
     }
     @Transactional
     public void deleteAccount(Long id){
@@ -54,7 +55,7 @@ public class BudgetService {
 
     @Transactional
     public Transaction createTransaction(Transaction transaction){
-        Account account=accountRepository.findById(transaction.getAccount().getId()).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
+        Account account=accountRepository.findById(transaction.getAccount().getId()).orElseThrow(()-> new ResourceNotFoundException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
         if(transaction.getType()== Type.EXPENSE){
             if(account.getBalance().compareTo(transaction.getAmount()) < 0 ){
                 throw new IllegalStateException("Za malo srodkow na koncie");
@@ -86,7 +87,7 @@ public class BudgetService {
     }
     @Transactional
     public void deleteTransaction(Long id){
-        Transaction transaction = transactionRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono transakcji o id: " + id));
+        Transaction transaction = transactionRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Nie znaleziono konta o id: " + id));
         Account account = accountRepository.findById(transaction.getAccount().getId()).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
         if(transaction.getType()== Type.EXPENSE){
 
@@ -105,7 +106,7 @@ public class BudgetService {
     public BudgetSummary getBudgetSummary(Long id,LocalDateTime from, LocalDateTime to) {
 
         if(!accountRepository.existsById(id)){
-            throw new IllegalArgumentException("Nie znaleziono konta o id: " + id);
+            throw new ResourceNotFoundException("Nie znaleziono konta o id: " + id);
         }
 
         List<Transaction> accountTransactions = getFilteredTransactions(from, to, null).stream()
