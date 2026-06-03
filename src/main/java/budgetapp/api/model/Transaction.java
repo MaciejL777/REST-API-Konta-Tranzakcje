@@ -1,6 +1,8 @@
 package budgetapp.api.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -38,6 +40,7 @@ public class Transaction {
     private LocalDateTime transactionDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"transactions", "hibernateLazyInitializer", "handler"})
     @JoinColumn(name="account_id", nullable = false)
     private Account account;
 

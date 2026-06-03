@@ -51,7 +51,7 @@ public class BudgetService {
 
     @Transactional
     public Transaction createTransaction(Transaction transaction){
-        Account account=transaction.getAccount();
+        Account account=accountRepository.findById(transaction.getAccount().getId()).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
         if(transaction.getType()== Type.EXPENSE){
             if(account.getBalance().compareTo(transaction.getAmount()) < 0 ){
                 throw new IllegalStateException("Za malo srodkow na koncie");
@@ -65,7 +65,7 @@ public class BudgetService {
         return transactionRepository.save(transaction);
     }
     public List<Transaction> getFilteredTransactions(LocalDateTime from, LocalDateTime to, String category) {
-        Specification<Transaction> spec = Specification.where((Specification<Transaction>) null);
+        Specification<Transaction> spec = (root, query, cb) -> cb.conjunction();
 
         if (from != null) {
             spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("transactionDate"), from));
@@ -84,7 +84,7 @@ public class BudgetService {
     @Transactional
     public void deleteTransaction(Long id){
         Transaction transaction = transactionRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono transakcji o id: " + id));
-        Account account = transaction.getAccount();
+        Account account = accountRepository.findById(transaction.getAccount().getId()).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
         if(transaction.getType()== Type.EXPENSE){
 
             account.setBalance(account.getBalance().add(transaction.getAmount()));
