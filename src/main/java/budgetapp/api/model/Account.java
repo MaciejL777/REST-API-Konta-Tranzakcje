@@ -1,5 +1,6 @@
 package budgetapp.api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -30,7 +31,7 @@ public class Account {
     private BigDecimal balance;
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @JsonIgnoreProperties({"account", "hibernateLazyInitializer", "handler"})
     private List<Transaction> transactions= new ArrayList<>();
 
     @Version
