@@ -22,7 +22,7 @@ public class Account {
     private Long id;
 
     @NotBlank(message = "Nazwa konta jest wymagana")
-    @Column(nullable = false,unique = true,length = 100)
+    @Column(nullable = false,length = 100)
     private String name;
 
     @Column(nullable = false, precision = 12,scale = 2)
@@ -30,6 +30,9 @@ public class Account {
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaction> transactions= new ArrayList<>();
+
+    @Version
+    private Long version;
 
     public Account(String name, BigDecimal balance) {
         this.name = name;
