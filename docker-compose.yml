@@ -1,0 +1,44 @@
+services:
+  budget-postgres-container:
+    image: postgres:15-alpine
+    container_name: budget-postgres-container
+    environment:
+      POSTGRES_DB: budget_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  spring-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: budget-spring-app-container
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://budget-postgres-container:5432/budget_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123
+    depends_on:
+      - budget-postgres-container
+
+  app-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    command: mvn clean verify
+    volumes:
+      - ~/.m2:/root/.m2
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://budget-postgres-container:5432/budget_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123
+    depends_on:
+      - budget-postgres-container
+
+volumes:
+  pgdata:

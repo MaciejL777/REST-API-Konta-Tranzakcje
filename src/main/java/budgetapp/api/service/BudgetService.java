@@ -1,0 +1,157 @@
+package budgetapp.api.service;
+
+
+import budgetapp.api.exception.ResourceNotFoundException;
+import budgetapp.api.model.Account;
+import budgetapp.api.dto.BudgetSummary;
+import budgetapp.api.model.Transaction;
+import budgetapp.api.model.Type;
+import budgetapp.api.repository.AccountRepository;
+import budgetapp.api.repository.TransactionRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class BudgetService {
+
+    private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
+
+    public List<Account> getAllAccounts(){
+        return accountRepository.findAll();
+    }
+
+    @Transactional
+    public Account createAccount(Account account){
+        if(account.getBalance()==null){
+            account.setBalance(BigDecimal.ZERO);
+        }
+        if(account.getBalance().compareTo(BigDecimal.ZERO) < 0){
+            throw new IllegalArgumentException("Saldo nie moze byc ujemne");
+        }
+        return accountRepository.save(account);
+    }
+
+    public Account findAccountById(Long id){
+        return accountRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono konta o podanym id: " + id));
+    }
+    @Transactional
+    public void deleteAccount(Long id){
+        Account account = findAccountById(id);
+        if(!account.getTransactions().isEmpty()){
+            throw new IllegalStateException("Nie mozna usunac konta z przypisanymi transakcjami");
+        }
+        accountRepository.delete(account);
+    }
+
+    @Transactional
+    public Transaction createTransaction(Transaction transaction){
+        Long accountId = transaction.getAccount().getId();
+        Account account=accountRepository.findById(accountId).orElseThrow(()-> new ResourceNotFoundException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
+        if(transaction.getType()== Type.EXPENSE){
+            if(account.getBalance().compareTo(transaction.getAmount()) < 0 ){
+                throw new IllegalStateException("Za malo srodkow na koncie");
+            }
+            account.setBalance(account.getBalance().subtract(transaction.getAmount()));
+            
+        } else if (transaction.getType()== Type.INCOME){
+            account.setBalance(account.getBalance().add(transaction.getAmount()));
+            
+        }
+        transaction.setAccount(account);
+        return transactionRepository.save(transaction);
+    }
+    public List<Transaction> getFilteredTransactions(LocalDateTime from, LocalDateTime to, String category) {
+        Specification<Transaction> spec = (root, query, cb) -> cb.conjunction();
+
+        if (from != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("transactionDate"), from));
+        }
+
+        if (to != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("transactionDate"), to));
+        }
+
+        if (category != null && !category.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), category));
+        }
+
+        return transactionRepository.findAll(spec);
+    }
+    @Transactional
+    public void deleteTransaction(Long id){
+        Transaction transaction = transactionRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Nie znaleziono konta o id: " + id));
+        Account account = accountRepository.findById(transaction.getAccount().getId()).orElseThrow(()-> new IllegalArgumentException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
+        if(transaction.getType()== Type.EXPENSE){
+
+            account.setBalance(account.getBalance().add(transaction.getAmount()));
+
+        } else if (transaction.getType()== Type.INCOME){
+
+            if(account.getBalance().compareTo(transaction.getAmount()) < 0){
+                throw new IllegalStateException("Nie mozna usunac tej transakcji, bo saldo konta jest za niskie");
+            }
+            account.setBalance(account.getBalance().subtract(transaction.getAmount()));
+
+        }
+        transactionRepository.delete(transaction);
+    }
+    public BudgetSummary getBudgetSummary(Long id,LocalDateTime from, LocalDateTime to) {
+
+        if(!accountRepository.existsById(id)){
+            throw new ResourceNotFoundException("Nie znaleziono konta o id: " + id);
+        }
+
+        List<Transaction> accountTransactions = getFilteredTransactions(from, to, null).stream()
+                .filter(t -> t.getAccount() != null && t.getAccount().getId().equals(id))
+                .collect(Collectors.toList());
+
+        BigDecimal totalIncome= accountTransactions.stream()
+                .filter(t->t.getType()== Type.INCOME)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalExpense = accountTransactions.stream()
+                .filter(t -> t.getType() == Type.EXPENSE)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Map<String,BigDecimal> exprenseByCategory = accountTransactions.stream()
+                .filter(t->t.getType()== Type.EXPENSE)
+                .collect(Collectors.groupingBy(
+                        Transaction::getCategory,
+                        Collectors.mapping(
+                                Transaction::getAmount,
+                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add)
+                        )
+                ));
+        return new BudgetSummary(totalIncome,totalExpense,exprenseByCategory);
+    }
+    public byte[] exportTransactionsToCsv(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono konta o id: " + accountId));
+
+        List<Transaction> transactions = account.getTransactions();
+        StringBuilder csvContent = new StringBuilder();
+        csvContent.append("ID;Data;Kwota;Typ;Kategoria;Opis\n");
+
+        for (Transaction t : transactions) {
+            csvContent.append(t.getId()).append(";")
+                    .append(t.getTransactionDate() != null ? t.getTransactionDate().toString() : "").append(";")
+                    .append(t.getAmount()).append(";")
+                    .append(t.getType()).append(";")
+                    .append(t.getCategory() != null ? t.getCategory() : "").append(";")
+                    .append(t.getDescription() != null ? t.getDescription() : "").append("\n");
+        }
+        return csvContent.toString().getBytes(StandardCharsets.UTF_8);
+    }
+}
