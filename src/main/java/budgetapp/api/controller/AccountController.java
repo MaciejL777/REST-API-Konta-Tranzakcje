@@ -7,7 +7,9 @@ import budgetapp.api.service.BudgetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,5 +51,16 @@ public class AccountController {
 
         BudgetSummary summary = budgetService.getBudgetSummary(accountId, from, to);
         return ResponseEntity.ok(summary);
+    }
+    @GetMapping("/{id}/transactions/export")
+    public ResponseEntity<byte[]> exportTransactions(@PathVariable Long id) {
+        byte[] csvData = budgetService.exportTransactionsToCsv(id);
+
+        String fileName = "transakcje_konto_" + id + ".csv";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .body(csvData);
     }
 }

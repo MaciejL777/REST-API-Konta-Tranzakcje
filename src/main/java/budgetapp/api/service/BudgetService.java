@@ -14,6 +14,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -132,5 +133,23 @@ public class BudgetService {
                         )
                 ));
         return new BudgetSummary(totalIncome,totalExpense,exprenseByCategory);
+    }
+    public byte[] exportTransactionsToCsv(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono konta o id: " + accountId));
+
+        List<Transaction> transactions = account.getTransactions();
+        StringBuilder csvContent = new StringBuilder();
+        csvContent.append("ID;Data;Kwota;Typ;Kategoria;Opis\n");
+
+        for (Transaction t : transactions) {
+            csvContent.append(t.getId()).append(";")
+                    .append(t.getTransactionDate() != null ? t.getTransactionDate().toString() : "").append(";")
+                    .append(t.getAmount()).append(";")
+                    .append(t.getType()).append(";")
+                    .append(t.getCategory() != null ? t.getCategory() : "").append(";")
+                    .append(t.getDescription() != null ? t.getDescription() : "").append("\n");
+        }
+        return csvContent.toString().getBytes(StandardCharsets.UTF_8);
     }
 }

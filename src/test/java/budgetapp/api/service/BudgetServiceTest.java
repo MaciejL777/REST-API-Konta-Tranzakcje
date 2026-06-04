@@ -47,7 +47,6 @@ public class BudgetServiceTest {
     void shouldDecreaseBalanceWhenAddingExpense() {
         Transaction expense = new Transaction(testAccount, new BigDecimal("100.00"), Type.EXPENSE, "Jedzenie", "Zakupy");
 
-        // FIX: Dodano brakujący mock dla weryfikacji konta w createTransaction
         when(accountRepository.findById(1L)).thenReturn(Optional.of(testAccount));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -63,7 +62,6 @@ public class BudgetServiceTest {
     void shouldThrowExceptionWhenExpenseIsGreaterThanBalance() {
         Transaction expensiveTransaction = new Transaction(testAccount, new BigDecimal("600.00"), Type.EXPENSE, "Elektronika", "Nowy telefon");
 
-        // FIX: Dodano brakujący mock dla weryfikacji konta w createTransaction
         when(accountRepository.findById(1L)).thenReturn(Optional.of(testAccount));
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -79,7 +77,6 @@ public class BudgetServiceTest {
     void shouldIncreaseBalanceWhenAddingIncome() {
         Transaction income = new Transaction(testAccount, new BigDecimal("250.00"), Type.INCOME, "Pensja", "Wypłata");
 
-        // FIX: Dodano brakujący mock dla weryfikacji konta w createTransaction
         when(accountRepository.findById(1L)).thenReturn(Optional.of(testAccount));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -118,5 +115,25 @@ public class BudgetServiceTest {
 
         assertEquals(0, new BigDecimal("600.00").compareTo(testAccount.getBalance()));
         verify(transactionRepository, times(1)).delete(expenseToDelete);
+    }
+    //TEST 6: GENEROWANIE CSV
+    @Test
+    void shouldExportTransactionsToCsv() {
+
+        Transaction t1 = new Transaction(testAccount, new BigDecimal("100.00"), Type.EXPENSE, "Jedzenie", "Zakupy");
+        testAccount.getTransactions().add(t1);
+
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(testAccount));
+
+
+        byte[] result = budgetService.exportTransactionsToCsv(1L);
+
+        assertNotNull(result);
+        String csvString = new String(result, java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(csvString.contains("ID;Data;Kwota;Typ;Kategoria;Opis"));
+        assertTrue(csvString.contains("100.00"));
+        assertTrue(csvString.contains("EXPENSE"));
+
+        verify(accountRepository, times(1)).findById(1L);
     }
 }

@@ -21,8 +21,8 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "Kwota tranzakcji musi byc wieksza od zera")
-    @DecimalMin(value = "0.01", message = "Kwota tranzakcji musi byc wieksza od zera")
+    @NotNull(message = "Kwota transakcji musi byc wieksza od zera")
+    @DecimalMin(value = "0.01", message = "Kwota transakcji musi byc wieksza od zera")
     @Column(nullable = false,precision=12,scale=2)
     private BigDecimal amount;
 
