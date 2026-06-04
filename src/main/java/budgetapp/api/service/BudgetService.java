@@ -56,7 +56,8 @@ public class BudgetService {
 
     @Transactional
     public Transaction createTransaction(Transaction transaction){
-        Account account=accountRepository.findById(transaction.getAccount().getId()).orElseThrow(()-> new ResourceNotFoundException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
+        Long accountId = transaction.getAccount().getId();
+        Account account=accountRepository.findById(accountId).orElseThrow(()-> new ResourceNotFoundException("Nie znaleziono konta o id: " + transaction.getAccount().getId()));
         if(transaction.getType()== Type.EXPENSE){
             if(account.getBalance().compareTo(transaction.getAmount()) < 0 ){
                 throw new IllegalStateException("Za malo srodkow na koncie");
