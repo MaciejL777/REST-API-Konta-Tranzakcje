@@ -68,6 +68,7 @@ public class BudgetService {
             account.setBalance(account.getBalance().add(transaction.getAmount()));
             
         }
+        transaction.setAccount(account);
         return transactionRepository.save(transaction);
     }
     public List<Transaction> getFilteredTransactions(LocalDateTime from, LocalDateTime to, String category) {
